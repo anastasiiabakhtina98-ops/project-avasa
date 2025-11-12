@@ -115,6 +115,21 @@ class AddressBook(UserDict):
                 })
         return upcoming_birthdays
 
+    def search(self, query):
+        found_records = []
+        query_lower = query.lower()
+
+        for record in self.data.values():
+            if query_lower in record.name.value.lower():
+                found_records.append(record)
+                continue
+
+            for phone in record.phones:
+                if query_lower in phone.value:
+                    found_records.append(record)
+                    break
+
+        return found_records
 
 def save_data(book, filename="addressbook.pkl"):
     with open(filename, "wb") as f:
@@ -254,6 +269,23 @@ def birthdays(args, book: AddressBook):
     return result.strip()
 
 
+@input_error
+def search_contacts(args, book: AddressBook):
+    if not args:
+        raise IndexError("Please provide a search term. Usage: search [query]")
+
+    query = " ".join(args)
+    results = book.search(query)
+
+    if not results:
+        return f"No contacts found matching '{query}'."
+
+    output = f"Search results for '{query}':\n"
+    for record in results:
+        output += f"{record}\n"
+
+    return output.strip()
+
 def main():
     book = load_data()
     
@@ -266,6 +298,7 @@ def main():
         "add birthday": lambda args, book: add_birthday(args, book),
         "show birthday": lambda args, book: show_birthday(args, book),
         "birthdays": lambda args, book: birthdays(args, book),
+        "search": lambda args, book: search_contacts(args, book),
     }
     print("Welcome to the assistant bot!")
     
