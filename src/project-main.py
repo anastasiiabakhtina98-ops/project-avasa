@@ -268,6 +268,7 @@ def parse_input(user_input):
         "add contact",
         "change contact",
         "add birthday",
+        "change birthday",
         "show birthday",
         "add email",
         "change email",
@@ -353,6 +354,23 @@ def add_birthday(args, book: AddressBook):
         raise KeyError(f"Contact '{name}' not found")
     record.add_birthday(birthday)
     return "Birthday added."
+
+
+@input_error
+def change_birthday(args, book: AddressBook):
+    """Changes the birthday for an existing contact."""
+    if len(args) < 2:
+        raise IndexError(
+            "Not enough arguments. Usage: change birthday [name] [new_DD.MM.YYYY]")
+    name, new_birthday, *_ = args
+    record = book.find(name)
+    if record is None:
+        raise KeyError(f"Contact '{name}' not found")
+    if record.birthday is None:
+        raise ValueError(f"Contact '{name}' has no birthday. Use 'add birthday' first.")
+
+    record.add_birthday(new_birthday)
+    return "Birthday updated."
 
 
 @input_error
@@ -485,6 +503,7 @@ ADDRESS MANAGEMENT:
 
 BIRTHDAY MANAGEMENT:
   add birthday [name] [DD.MM.YYYY]     - Add birthday to contact
+  change birthday [name] [DD.MM.YYYY]  - Change contact birthday
   show birthday [name]                 - Display contact birthday
   birthdays                            - Show upcoming birthdays (7 days)
 
@@ -510,6 +529,7 @@ def main():
         "show all": lambda args, book: show_all(args, book),
         "add birthday": lambda args, book: add_birthday(args, book),
         "show birthday": lambda args, book: show_birthday(args, book),
+        "change birthday": lambda args, book: change_birthday(args, book),
         "add email": lambda args, book: add_email(args, book),
         "change email": lambda args, book: change_email(args, book),
         "add address": lambda args, book: add_address(args, book),
