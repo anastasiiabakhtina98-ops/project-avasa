@@ -22,7 +22,7 @@ class Phone(Field):
     """Class for phone number with validation."""
     def __init__(self, value):
         if not self.validate(value):
-            raise ValueError("Phone number must contain 10 digits.")
+            raise ValueError("Phone number must contain 10 digits. Use format like 0931112233.")
         super().__init__(value)
 
     @staticmethod
@@ -34,6 +34,7 @@ class Phone(Field):
 class Email(Field):
     """Class for email with validation."""
     def __init__(self, value):
+        value = value.strip().lower()
         if not self.validate(value):
             raise ValueError("Invalid email format. Must contain '@' and domain.")
         super().__init__(value)
@@ -94,7 +95,7 @@ class Record:
         phone_to_edit = self.find_phone(old_phone)
         if phone_to_edit:
             if not Phone.validate(new_phone):
-                raise ValueError("New phone number must contain 10 digits.")
+                raise ValueError("New phone number must contain 10 digits. Use format like 0931112233.")
             index = self.phones.index(phone_to_edit)
             self.phones[index] = Phone(new_phone)
         else:
