@@ -190,32 +190,37 @@ class AddressBook(UserDict):
         else:
             raise KeyError(f"Contact '{name}' not found")
 
-    def get_upcoming_birthdays(self):
-        """Returns contacts with upcoming birthdays in next 7 days."""
+    def get_birthdays_in_days(self, days: int):
+        """Returns contacts with birthday exactly in `days` days from today."""
+        if days < 0:
+            raise ValueError("Number of days cannot be negative.")
         today = datetime.today().date()
-        upcoming_birthdays = []
+        target_date = today + timedelta(days=days)
+        result = []
         for record in self.data.values():
-            if record.birthday is None:
+            if not record.birthday:
                 continue
-            birthday_date = record.birthday.value.date()
-            birthday_this_year = birthday_date.replace(year=today.year)
-
-            if birthday_this_year < today:
-                birthday_this_year = birthday_date.replace(year=today.year + 1)
-            days_until_birthday = (birthday_this_year - today).days
-
-            if 0 <= days_until_birthday <= 7:
-                congratulation_date = birthday_this_year
-                if birthday_this_year.weekday() == 5:
-                    congratulation_date = birthday_this_year + timedelta(days=2)
-                elif birthday_this_year.weekday() == 6:
-                    congratulation_date = birthday_this_year + timedelta(days=1)
-
-                upcoming_birthdays.append({
+            bday = record.birthday.value.date()
+            bday_this_year = bday.replace(year=today.year)
+            if bday_this_year < today:
+                bday_this_year = bday_this_year.replace(year=today.year + 1)
+            if bday_this_year == target_date:
+                date = bday_this_year
+                wd = date.weekday()
+                if wd == 5:  # Субота → Понеділок
+                    date += timedelta(days=2)
+                elif wd == 6:  # Неділя → Понеділок
+                    date += timedelta(days=1)
+                result.append({
                     "name": record.name.value,
-                    "congratulation_date": congratulation_date.strftime("%d.%m.%Y")
+                    "congratulation_date": date.strftime("%d.%m.%Y")
                 })
-        return upcoming_birthdays
+        result.sort(key=lambda x: x["name"])
+        return result
+
+    def get_upcoming_birthdays(self):
+        """Keeps backward compatibility — returns birthdays in 7 days."""
+        return self.get_birthdays_in_days(7)
 
     def search(self, query):
         """Searches contacts by name, phone, email, address, or birthday."""
@@ -439,15 +444,24 @@ def show_birthday(args, book: AddressBook):
 
 @input_error
 def birthdays(args, book: AddressBook):
-    """Displays upcoming birthdays in the next 7 days."""
-    upcoming = book.get_upcoming_birthdays()
+    """Show birthdays in exactly N days (default: 7)."""
+    if not args:
+        days = 7
+    else:
+        try:
+            days = int(args[0])
+            if days < 0:
+                raise ValueError
+        except ValueError:
+            return "Error: Enter a valid number (e.g., 'birthdays 5')"
+
+    upcoming = book.get_birthdays_in_days(days)
     if not upcoming:
-        return "No upcoming birthdays in the next week."
+        return f"No birthdays in {days} day{'s' if days != 1 else ''}."
 
-    result = "Upcoming birthdays:\n"
+    result = f"Birthdays in {days} day{'s' if days != 1 else ''}:\n"
     for item in upcoming:
-        result += f"{item['name']}: {item['congratulation_date']}\n"
-
+        result += f"• {item['name']} → {item['congratulation_date']}\n"
     return result.strip()
 
 
@@ -555,7 +569,8 @@ BIRTHDAY MANAGEMENT:
   add birthday [name] [DD.MM.YYYY]     - Add birthday to contact
   change birthday [name] [DD.MM.YYYY]  - Change contact birthday
   show birthday [name]                 - Display contact birthday
-  birthdays                            - Show upcoming birthdays (7 days)
+  birthdays [N]                        - Show birthdays in exactly N days (default: 7)
+                                       Examples: birthdays 0 (today), birthdays 3, birthdays 30
 
 GENERAL:
   hello                                - launch bot
@@ -601,7 +616,7 @@ def main():
 
             if command in ["close", "exit"]:
                 save_data(book)
-                print("\n✓ Data saved. Good bye!")
+                print("\nData saved. Good bye!")
                 break
 
             if command in commands:
@@ -609,14 +624,14 @@ def main():
                 if result:
                     print(f"\n{result}\n")
             else:
-                print(f"\n✗ Invalid command: '{command}'. Type 'help' for assistance.\n")
+                print(f"\nInvalid command: '{command}'. Type 'help' for assistance.\n")
 
         except KeyboardInterrupt:
             print("\n\nExiting... (Data will be saved)")
             save_data(book)
             break
         except Exception as e:
-            print(f"\n✗ Unexpected error: {e}\n")
+            print(f"\nUnexpected error: {e}\n")
 
 
 if __name__ == "__main__":
