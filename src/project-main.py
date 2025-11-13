@@ -1,7 +1,8 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-import pickle
+import json
 import re
+import os
 
 
 class Field:
@@ -132,6 +133,35 @@ class Record:
         """Adds or updates birthday."""
         self.birthday = Birthday(birthday)
 
+    def to_dict(self):
+        """Covert Record object to dict"""
+        return {
+            "name": self.name.value,
+            "phones": [phone.value for phone in self.phones],
+            "email": self.email.value if self.email else None,
+            "address": self.address.value if self.address else None,
+            "birthday": self.birthday.value.strftime("%d.%m.%Y") if self.birthday else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create object Record from dict"""
+        record = cls(data["name"])
+
+        for phone in data.get("phones", []):
+            record.add_phone(phone)
+
+        if data.get("email"):
+            record.add_email(data["email"])
+
+        if data.get("address"):
+            record.add_address(data["address"])
+
+        if data.get("birthday"):
+            record.add_birthday(data["birthday"])
+
+        return record
+
     def __str__(self):
         """Returns formatted string representation of the contact."""
         phones_str = "; ".join(p.value for p in self.phones) if self.phones else "No phones"
@@ -227,18 +257,37 @@ class AddressBook(UserDict):
         return found_records
 
 
-def save_data(book, filename="addressbook.pkl"):
-    """Saves address book to pickle file."""
-    with open(filename, "wb") as f:
-        pickle.dump(book, f)
+def save_data(book, filename="addressbook.json"):
+    """Saves address book to JSON file."""
+    data_to_save = [record.to_dict() for record in book.data.values()]
+
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data_to_save, f, indent=4, ensure_ascii=False)
 
 
-def load_data(filename="addressbook.pkl"):
-    """Loads address book from pickle file."""
+def load_data(filename="addressbook.json"):
+    """Loads address book from JSON file."""
+    if not os.path.exists(filename):
+        return AddressBook()
+
     try:
-        with open(filename, "rb") as f:
-            return pickle.load(f)
+        with open(filename, "r", encoding="utf-8") as f:
+            try:
+                data_list = json.load(f)
+            except json.JSONDecodeError:
+                print(f"Error: Can't read {filename}. Created new Adress book.")
+                return AddressBook()
+
+        book = AddressBook()
+        for record_dict in data_list:
+            record = Record.from_dict(record_dict)
+            book.add_record(record)
+        return book
+
     except FileNotFoundError:
+        return AddressBook()
+    except Exception as e:
+        print(f"Error during data loading: {e}. Created new Adress book.")
         return AddressBook()
 
 
