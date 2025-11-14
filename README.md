@@ -21,7 +21,7 @@ A modular Python assistant bot that manages contacts and notes with advanced sea
 ## Project Structure
 
 ```
-project-fantastic5/
+project-avasa/
 ├── src/
 │   ├── __init__.py              # Package initialization
 │   ├── config.py                # Configuration & constants
@@ -157,7 +157,7 @@ mypy src/
 - **Sergi Alekseiuk** - Notebook, Tags
 - **Andrii Borodin** - Data Models, Persistence
 - **Anton Glazkov** - Birthdays
-- **Valeriia Bogdan-Koretska** - Documentation
+- **Valeriia Bogdan-Koretska** - Handlers, Documentation
 
 ## License
 
