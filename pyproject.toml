@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bot-assistant"
+version = "1.0.0"
+description = "Modular bot assistant for managing contacts and notes"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Team: Anastasiia Bakhtina, Sergi Alekseiuk, Andrii Borodin, Anton Glazkov, Valeriia Bogdan-Koretska", email = "anastasiiabakhtina98@gmail.com"},
+]
+license = {text = "MIT"}
+keywords = ["assistant", "addressbook", "notebook", "contacts"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/anastasiiabakhtina98-ops/project-fantastic5"
+Repository = "https://github.com/anastasiiabakhtina98-ops/project-fantastic5.git"
+Issues = "https://github.com/anastasiiabakhtina98-ops/project-fantastic5/issues"
+
+[project.scripts]
+bot-assistant = "src.main:main"
+
+[tool.setuptools]
+packages = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true

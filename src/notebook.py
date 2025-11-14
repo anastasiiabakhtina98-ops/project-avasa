@@ -1,178 +1,68 @@
-import json
-import os
+"""NoteBook class for managing notes."""
 
-# -----------------------------
-# Console NoteBook App
-# Features: add, view, search, edit, delete, sort notes by tags
-# -----------------------------
+from collections import UserDict
+from src.note import Note
 
-class NoteBook:
-    def __init__(self, filename="notes.json"):
-        self.filename = filename
-        self.notes = self.load_notes()
 
-    # ---------- Data Handling ----------
-    def load_notes(self):
-        """Load notes from a JSON file."""
-        if os.path.exists(self.filename):
-            with open(self.filename, "r", encoding="utf-8") as f:
-                try:
-                    return json.load(f)
-                except json.JSONDecodeError:
-                    return []
-        return []
+class NoteBook(UserDict):
+    """Class representing the notebook (collection of notes)."""
 
-    def save_notes(self):
-        """Save all notes to a JSON file."""
-        with open(self.filename, "w", encoding="utf-8") as f:
-            json.dump(self.notes, f, indent=4, ensure_ascii=False)
+    def add_note(self, note):
+        """Adds a note to the notebook."""
+        self.data[note.title] = note
 
-    # ---------- Core Features ----------
-    def add_note(self, title, content, tags):
-        """Add a new note with title, content, and tags."""
-        note = {
-            "title": title.strip(),
-            "content": content.strip(),
-            "tags": [t.strip().lower() for t in tags if t.strip()]
-        }
-        self.notes.append(note)
-        self.save_notes()
-        print("✅ Note added!")
+    def find(self, title):
+        """Finds a note by title."""
+        return self.data.get(title)
 
-    def view_notes(self):
-        """List all notes and allow opening them in a loop."""
-        if not self.notes:
-            print("📭 No notes found.")
-            return
-
-        while True:
-            print("\nAll notes:")
-            for i, note in enumerate(self.notes, 1):
-                tags = ", ".join(note["tags"])
-                print(f"{i}. {note['title']}  [tags: {tags}]")
-
-            choice = input("\nEnter note number/title to open (Enter or 'q' to return): ").strip()
-            if not choice or choice.lower() == "q":
-                break  # exit view mode
-
-            # Determine if user entered number or title
-            note = None
-            if choice.isdigit():
-                index = int(choice) - 1
-                if 0 <= index < len(self.notes):
-                    note = self.notes[index]
-            else:
-                note = next((n for n in self.notes if n["title"].lower() == choice.lower()), None)
-
-            if note:
-                tags = ", ".join(note["tags"])
-                print(f"\n📝 {note['title']}  [tags: {tags}]\n{'-'*40}\n{note['content']}\n{'-'*40}")
-                input("\nPress Enter to go back to the list...")
-            else:
-                print("❌ Note not found.")
-
-    def search_notes(self, keyword):
-        """Search for notes by keyword (title, content, or tag)."""
-        keyword = keyword.lower()
-        results = [
-            n for n in self.notes
-            if keyword in n["title"].lower()
-            or keyword in n["content"].lower()
-            or keyword in [t.lower() for t in n["tags"]]
-        ]
-        if results:
-            print(f"\n🔎 Found {len(results)} note(s):")
-            for note in results:
-                tags = ", ".join(note["tags"])
-                print(f"\n📝 {note['title']}  [tags: {tags}]\n{note['content']}")
+    def delete(self, title):
+        """Deletes a note by title."""
+        if title in self.data:
+            del self.data[title]
         else:
-            print("❌ No matching notes found.")
+            raise KeyError(f"Note '{title}' not found")
 
-    def edit_note(self, title):
-        """Edit a note by title."""
-        for note in self.notes:
-            if note["title"].lower() == title.lower():
-                new_title = input("New title (Enter to keep): ").strip()
-                new_content = input("New content (Enter to keep): ").strip()
-                new_tags = input("New tags (comma-separated, Enter to keep): ").strip()
+    def edit(self, title, new_title=None, new_content=None, new_tags=None):
+        """Edits a note."""
+        note = self.find(title)
+        if note is None:
+            raise KeyError(f"Note '{title}' not found")
 
-                if new_title:
-                    note["title"] = new_title
-                if new_content:
-                    note["content"] = new_content
-                if new_tags:
-                    note["tags"] = [t.strip().lower() for t in new_tags.split(",") if t.strip()]
+        if new_title:
+            if not Note.validate_title(new_title):
+                raise ValueError("Note title cannot be empty.")
+            del self.data[title]
+            note.title = new_title.strip()
+            self.add_note(note)
 
-                self.save_notes()
-                print("✏️ Note updated!")
-                return
-        print("❌ Note not found.")
+        if new_content:
+            if not Note.validate_content(new_content):
+                raise ValueError("Note content cannot be empty.")
+            note.content = new_content.strip()
 
-    def delete_note(self, title):
-        """Delete a note by title."""
-        for note in self.notes:
-            if note["title"].lower() == title.lower():
-                self.notes.remove(note)
-                self.save_notes()
-                print("🗑️ Note deleted!")
-                return
-        print("❌ Note not found.")
+        if new_tags is not None:
+            note.tags = [t.strip().lower() for t in new_tags if t.strip()]
 
-    def sort_by_tag(self):
-        """Sort and display notes alphabetically by their first tag."""
-        sorted_notes = sorted(self.notes, key=lambda n: n["tags"][0] if n["tags"] else "")
-        for i, note in enumerate(sorted_notes, 1):
-            tags = ", ".join(note["tags"])
-            print(f"{i}. {note['title']}  [tags: {tags}]")
+    def search(self, query):
+        """Searches notes by keyword (title, content, or tag)."""
+        query_lower = query.lower()
+        results = []
 
-# -----------------------------
-# Console Interface
-# -----------------------------
-def main():
-    nb = NoteBook()
+        for note in self.data.values():
+            # Search by title
+            if query_lower in note.title.lower():
+                results.append(note)
+            # Search by content
+            elif query_lower in note.content.lower():
+                results.append(note)
+            # Search by tags
+            elif any(query_lower in tag.lower() for tag in note.tags):
+                results.append(note)
 
-    while True:
-        print("\n--- 📒 NoteBook Menu ---")
-        print("1. Add note")
-        print("2. View notes (list + open mode)")
-        print("3. Search notes")
-        print("4. Edit note")
-        print("5. Delete note")
-        print("6. Sort notes by tags")
-        print("0. Exit")
+        return results
 
-        choice = input("Enter your choice: ").strip()
-
-        if choice == "1":
-            title = input("Note title: ")
-            content = input("Note content: ")
-            tags = input("Tags (comma-separated): ").split(",")
-            nb.add_note(title, content, tags)
-
-        elif choice == "2":
-            nb.view_notes()
-
-        elif choice == "3":
-            keyword = input("Enter keyword or tag: ")
-            nb.search_notes(keyword)
-
-        elif choice == "4":
-            title = input("Enter note title to edit: ")
-            nb.edit_note(title)
-
-        elif choice == "5":
-            title = input("Enter note title to delete: ")
-            nb.delete_note(title)
-
-        elif choice == "6":
-            nb.sort_by_tag()
-
-        elif choice == "0":
-            print("👋 Goodbye!")
-            break
-
-        else:
-            print("❗ Invalid choice, try again.")
-
-if __name__ == "__main__":
-    main()
+    def get_by_tag(self, tag):
+        """Returns all notes with a specific tag."""
+        tag_lower = tag.lower()
+        return [note for note in self.data.values() if tag_lower in note.tags]
+    

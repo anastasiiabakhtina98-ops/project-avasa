@@ -1,0 +1,12 @@
+
+requirements.txt
+# Production dependencies
+# No external dependencies required for basic functionality
+
+# Development dependencies (optional)
+# Uncomment to use:
+# pytest>=7.0
+# black>=22.0
+# isort>=5.0
+# mypy>=0.950
+# flake8>=4.0
